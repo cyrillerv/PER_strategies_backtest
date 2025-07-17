@@ -71,12 +71,11 @@ def calc_cluster_distance_matrix(row, df_sector) :
     return df_clusters
 
 
-def interpret_signals(df_all_cluster_distance_matrix, nb_min_ticker_per_cluster, tolerance_around_mean, num_stocks_available):
+def interpret_signals1(df_all_cluster_distance_matrix, nb_min_ticker_per_cluster, tolerance_around_mean, num_stocks_available):
     # Last function
     # On enlève les cluster pour lesquels il n'y a qu'un seul ticker à cette date là
     
-    index_ok_cluster = df_all_cluster_distance_matrix.groupby(["date", "Cluster"]).count()['Ticker'][df_all_cluster_distance_matrix.groupby(["date", "Cluster"]).count()['Ticker'] > nb_min_ticker_per_cluster].index
-    df_all_cluster_distance_matrix = df_all_cluster_distance_matrix.set_index(["date", "Cluster"])[df_all_cluster_distance_matrix.set_index(["date", "Cluster"]).index.isin(index_ok_cluster)].reset_index()
+
     dic_test = df_all_cluster_distance_matrix.groupby(["date", "Cluster"])["PER"].mean().to_frame().unstack(level=0).T.droplevel(0).to_dict()
     df_all_cluster_distance_matrix["Cluster_mean"] = df_all_cluster_distance_matrix.apply(lambda row: dic_test[row["Cluster"]][row['date']], axis=1)
     df_all_cluster_distance_matrix
@@ -104,3 +103,119 @@ def interpret_signals(df_all_cluster_distance_matrix, nb_min_ticker_per_cluster,
     df_prise_positions_distance_matrix.rename(columns={"index":"Date", "Ticker":"Symbol"}, inplace=True)
     df_prise_positions_distance_matrix.drop(columns=["Value"], inplace=True)
     return df_prise_positions_distance_matrix
+
+
+def interpret_signals(df_clustered_date_filtered, tolerance_around_mean, num_stocks_available):
+    dic_test = df_clustered_date_filtered.groupby(["date", "Cluster"])["PER"].mean().to_frame().unstack(level=0).T.droplevel(0).to_dict()
+    df_clustered_date_filtered["Cluster_mean"] = df_clustered_date_filtered.apply(lambda row: dic_test[row["Cluster"]][row['date']], axis=1)
+    df_clustered_date_filtered
+
+    tolerance_around_mean = 0.2
+    df_clustered_date_filtered["Position"] = np.where(df_clustered_date_filtered["PER"] < ((1-tolerance_around_mean)*df_clustered_date_filtered["Cluster_mean"]), 1,
+            np.where(
+                df_clustered_date_filtered["PER"] > ((1+tolerance_around_mean)*df_clustered_date_filtered["Cluster_mean"]), -1, 0
+            ))
+    df_clustered_date_filtered
+
+    df_positions = df_clustered_date_filtered.pivot_table("Position", "date", "Ticker")
+    # On rajoute une ligne vide pour que lorsqu'on fasse le .diff() pour détecter les prise de positon, les positions prises le premier jour soient quand même détectée
+    df_positions = pd.concat([df_positions, pd.DataFrame(index=[df_positions.index.min() - pd.Timedelta(days=1)])])
+    df_positions.sort_index(inplace=True)
+
+    df_prise_positions = df_positions.ffill().fillna(0).diff().replace(0, np.nan)
+    df_prise_positions_melted = df_prise_positions.reset_index().melt(id_vars=['index'], var_name='Ticker', value_name='Value').dropna().copy()
+
+    num_stocks_available_clustering = num_stocks_available.reindex(list(set(df_prise_positions_melted["index"])), method='ffill')
+    df_prise_positions_melted["Volume"] = df_prise_positions_melted.apply(
+        lambda row: num_stocks_available_clustering.loc[row['index'], row['Ticker']] if row['Ticker'] in num_stocks_available.columns else np.nan,
+        axis=1)
+    df_prise_positions_melted["Type"] = np.where(df_prise_positions_melted["Value"] == 1, "Buy", "Sell")
+    df_prise_positions_melted.rename(columns={"index":"Date", "Ticker":"Symbol"}, inplace=True)
+    df_prise_positions_melted.drop(columns=["Value"], inplace=True)
+    return df_prise_positions_melted
+
+
+
+
+
+def prepare_field_data(df: pd.DataFrame, field: str) -> pd.DataFrame:
+    """
+    Transforme un DataFrame large en format long indexé par (date, Ticker).
+    
+    Paramètres :
+        df (pd.DataFrame) : DataFrame avec dates en index et tickers en colonnes
+        field (str) : Nom du champ cible ('PER', 'MarketCap', etc.)
+
+    Retourne :
+        pd.DataFrame : DataFrame indexé par (date, Ticker), avec une seule colonne : field
+    """
+    # 1. Remettre la date en colonne
+    melted = df.reset_index().melt(
+        id_vars=['index'], var_name='Ticker', value_name=field
+    ).dropna()
+
+    # 2. Renommer 'index' en 'date'
+    melted.rename(columns={'index': 'date'}, inplace=True)
+
+    # 3. Si c'est le PER, on filtre les valeurs aberrantes
+    if field.lower() == 'per':
+        melted = melted[(melted[field] > 0) & (melted[field] < 80)].copy()
+
+    # 4. Supprimer les doublons
+    melted.drop_duplicates(['Ticker', field], keep='first', inplace=True)
+
+    # 5. Mettre l'index sur (date, Ticker)
+    melted.set_index(['date', 'Ticker'], inplace=True)
+
+    return melted
+
+
+import pandas as pd
+import numpy as np
+from k_means_constrained import KMeansConstrained
+from sklearn.preprocessing import StandardScaler
+from tqdm import tqdm
+
+def calculate_cluster(df_input) :
+    # Convertir la colonne Date en format datetime
+    df_input['date'] = pd.to_datetime(df_input['date'])
+
+    # Liste pour stocker les résultats de clustering
+    results = []
+
+    # Appliquer le clustering pour chaque date
+    for date, group in tqdm(df_input.groupby('date')):
+        X = group[['MarketCap', 'TotalRevenue', 'TotalAssets', 'Sector']].values  # Features utilisées pour le clustering
+        # print(X.shape[1])
+        if X.shape[0] < 20 :
+            continue
+        
+        # Standardisation des données
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        
+        # Déterminer le nombre de clusters initial
+        n_clusters = max(1, len(group) // 20)  # On ajuste dynamiquement le nombre de clusters
+        
+        # Ajuster `n_clusters` si nécessaire
+        while n_clusters * 20 < len(group):  
+            n_clusters += 1  # Augmenter le nombre de clusters pour éviter l'erreur
+        
+        # Clustering avec contrainte (max 20 tickers par cluster)
+        kmeans = KMeansConstrained(
+            n_clusters=n_clusters,  # Nombre de clusters ajusté
+            size_max=20,   # Contrainte : max 20 valeurs par cluster
+            random_state=42
+        )
+        
+        clusters = kmeans.fit_predict(X_scaled)
+        
+        # Ajouter les clusters au DataFrame
+        group['Cluster'] = clusters
+        
+        # Stocker les résultats
+        results.append(group)
+
+    # Concaténer tous les résultats en un seul DataFrame
+    df_clustered = pd.concat(results)
+    return df_clustered
