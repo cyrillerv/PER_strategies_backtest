@@ -8,8 +8,11 @@ from src.data_loading import load_data
 from src.preprocessing import clean_data
 from src.strategies.strategy_baseline import strat_fixed_treshold
 
-df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, dic_sectors = load_data()
-df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, dic_sectors = clean_data(df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, dic_sectors)
+df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, df_stockPrices, dic_sectors = load_data()
+df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, df_stockPrices, dic_sectors = clean_data(df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, df_stockPrices, dic_sectors)
+
+# Nombre d'actions qu'on peut s'acheter à chaque date avec 1000$
+num_stocks_available = 1000 // df_stockPrices
 
 # First strat
-strat_fixed_treshold(df_PER, threshold=15)
+strat_fixed_treshold(df_PER, num_stocks_available)
