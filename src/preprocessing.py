@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 def clean_data(df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, df_stockPrices, dic_sectors) :
+    # Enlever des df tous les tickers pour lesquels on n'a pas de stock price => if ticker not in df_stockPrices.columns
     df_MarketCap.set_index("Unnamed: 0", inplace=True)
     df_MarketCap.index.name = None
     df_MarketCap.replace([np.inf, -np.inf], np.nan, inplace=True)
