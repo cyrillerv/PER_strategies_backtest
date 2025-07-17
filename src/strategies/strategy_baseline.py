@@ -1,7 +1,7 @@
 # Pour cette strategy on applique un seuil fixe arbitraire: si on est en dessous on achète, sinon on vend
 import numpy as np
 import pandas as pd
-from src.utils import create_df_input
+from src.utils.utils_simple_strat import create_df_input
 
 def strat_fixed_treshold(df_PER, num_stocks_available) :
     # Conditions

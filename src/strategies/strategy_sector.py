@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from src.utils import create_df_input
+from src.utils.utils_simple_strat import create_df_input
 
 def strat_sector_PER(df_PER, dic_ticker_sector_cleaned, num_stocks_available) :
 
