@@ -1,7 +1,25 @@
 import numpy as np
 import pandas as pd
 
-def clean_data(df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, df_stockPrices, dic_sectors) :
+def clean_data(dic_input) :
+    valid_fields = {"MarketCap", "PER", "TotalAssets", "TotalRevenue", "StockPrices", "Sectors"}
+    assert set(dic_input.keys()).issubset(valid_fields), "Un ou plusieurs champs invalides"
+
+    dic_output = {}
+    for field in dic_input :
+        if field != "Sectors" :
+            df = dic_input[field].copy()
+            df.set_index("Unnamed: 0", inplace=True)
+            df.index.name = None
+            df.replace([np.inf, -np.inf], np.nan, inplace=True)
+            df.dropna(axis=1, how='all', inplace=True)
+            df.index = pd.to_datetime(df.index)
+            dic_output[field] = df
+        else :
+            dic_output[field] = dic_input[field]
+
+    return dic_output
+
     # Enlever des df tous les tickers pour lesquels on n'a pas de stock price => if ticker not in df_stockPrices.columns
     df_MarketCap.set_index("Unnamed: 0", inplace=True)
     df_MarketCap.index.name = None
