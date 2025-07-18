@@ -5,11 +5,6 @@ from src.utils.utils_clustering import prepare_field_data, calculate_cluster, in
 def strat_cluster_K_means(dic_inputs, num_stocks_available) :
     df_MarketCap, df_TotalAssets, df_TotalRevenue, df_PER, dic_sectors = tuple(dic_inputs[field] for field in ["MarketCap", "TotalAssets", "TotalRevenue", "PER", "Sectors"])
     
-    # TODO: passer ces lignes ci dessous dans le fichier preprocessing.py
-    df_TotalRevenue.ffill(inplace=True)
-    df_TotalAssets.ffill(inplace=True)
-    df_MarketCap.ffill(inplace=True)
-    df_PER.ffill(inplace=True)
     # On fusionne toutes les infos en un seul df
     melted_MarketCap = prepare_field_data(df_MarketCap, 'MarketCap')
     melted_TotalRevenue = prepare_field_data(df_TotalRevenue, 'TotalRevenue')
