@@ -17,8 +17,9 @@ def strategy_distance_matrix_clustering(dic_inputs, num_stocks_available) :
     # On concatène toutes les df en un seul
     concat_data = pd.concat([df_MarketCap, df_TotalAssets, df_TotalRevenue], axis=1, keys=['MarketCap', 'TotalAssets', 'TotalRevenue'])
     concat_data.ffill(inplace=True)
-    concat_data = concat_data.loc[concat_data.index > pd.to_datetime("2025-01-01")]
-    print(concat_data)
+    rebalancing_dates = ["2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01", "2025-07-01"]
+    # Si on veut recalculer les clusters à chaque fois => on commente la ligne d'en dessous.
+    concat_data = concat_data.loc[concat_data.index.isin([pd.to_datetime(date) for date in rebalancing_dates])]
 
     # On crée le df de penalty pour le field 'sector'
     df_sector = create_df_sector_penalty(dic_sectors)
@@ -40,8 +41,15 @@ def strategy_distance_matrix_clustering(dic_inputs, num_stocks_available) :
 
 
     # On ajoute le PER au df
-    reindexed_PER = df_PER.reindex(list(set(df_all_cluster_distance_matrix["date"])), method='ffill')
-    df_all_cluster_distance_matrix["PER"] = df_all_cluster_distance_matrix.progress_apply(lambda row: reindexed_PER.loc[row["date"], row["Ticker"]] if row["date"] in reindexed_PER.index and row["Ticker"] in reindexed_PER.columns else np.nan, axis=1)
+    reindexed_PER = df_PER.copy().reindex(
+        list(set(df_all_cluster_distance_matrix["date"]))
+        , method='ffill'
+        )
+    df_all_cluster_distance_matrix["PER"] = df_all_cluster_distance_matrix.progress_apply(
+        lambda row: reindexed_PER.loc[row["date"], 
+                                      row["Ticker"]] if row["date"] in reindexed_PER.index and row["Ticker"] in reindexed_PER.columns else np.nan
+                                      , axis=1
+                                      )
     df_all_cluster_distance_matrix.dropna(inplace=True)
 
     nb_min_ticker_per_cluster = 5
