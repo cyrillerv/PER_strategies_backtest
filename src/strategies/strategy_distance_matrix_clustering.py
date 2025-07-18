@@ -10,11 +10,15 @@ from src.utils.utils_clustering import *
 # TODO: ne pas recalculer les cluster pour chaque date, mais plutôt le faire pour un intervalle plus long. Ex: trimestriellement.
 
 
-def strategy_distance_matrix_clustering(df_MarketCap, df_TotalAssets, df_TotalRevenue, df_PER, dic_sectors, num_stocks_available) :
+def strategy_distance_matrix_clustering(dic_inputs, num_stocks_available) :
+
+    df_MarketCap, df_TotalAssets, df_TotalRevenue, df_PER, dic_sectors = tuple(dic_inputs[field] for field in ["MarketCap", "TotalAssets", "TotalRevenue", "PER", "Sectors"])
 
     # On concatène toutes les df en un seul
     concat_data = pd.concat([df_MarketCap, df_TotalAssets, df_TotalRevenue], axis=1, keys=['MarketCap', 'TotalAssets', 'TotalRevenue'])
     concat_data.ffill(inplace=True)
+    concat_data = concat_data.loc[concat_data.index > pd.to_datetime("2025-01-01")]
+    print(concat_data)
 
     # On crée le df de penalty pour le field 'sector'
     df_sector = create_df_sector_penalty(dic_sectors)

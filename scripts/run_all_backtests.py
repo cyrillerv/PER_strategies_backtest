@@ -15,12 +15,12 @@ from src.strategies.strategy_cluster import strat_cluster_K_means
 fields = ["MarketCap", "PER", "TotalAssets", "TotalRevenue", "StockPrices", "Sectors"]
 dic_results = load_data(fields)
 dic_results = clean_data(dic_results)
-df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, df_stockPrices, dic_sectors = tuple(dic_results[field] for field in fields)
+# df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, df_stockPrices, dic_sectors = tuple(dic_results[field] for field in fields)
 # Nombre d'actions qu'on peut s'acheter à chaque date avec 1000$
-num_stocks_available = 1000 // df_stockPrices
+num_stocks_available = 1000 // dic_results['StockPrices']
 
-# strat_fixed_treshold(df_PER, num_stocks_available)
-# historical_PER_strat(df_PER, num_stocks_available)
-# strat_sector_PER(df_PER, dic_sectors, num_stocks_available)
-strategy_distance_matrix_clustering(df_MarketCap, df_TotalAssets, df_TotalRevenue, df_PER, dic_sectors, num_stocks_available)
-# strat_cluster_K_means(df_TotalRevenue, df_TotalAssets, df_MarketCap, df_PER, dic_sectors, num_stocks_available)
+strat_fixed_treshold(dic_results, num_stocks_available)
+historical_PER_strat(dic_results, num_stocks_available)
+strat_sector_PER(dic_results, num_stocks_available)
+strategy_distance_matrix_clustering(dic_results, num_stocks_available)
+strat_cluster_K_means(dic_results, num_stocks_available)

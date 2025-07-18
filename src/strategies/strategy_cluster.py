@@ -2,7 +2,9 @@ import pandas as pd
 
 from src.utils.utils_clustering import prepare_field_data, calculate_cluster, interpret_signals
 
-def strat_cluster_K_means(df_TotalRevenue, df_TotalAssets, df_MarketCap, df_PER, dic_sectors, num_stocks_available) :
+def strat_cluster_K_means(dic_inputs, num_stocks_available) :
+    df_MarketCap, df_TotalAssets, df_TotalRevenue, df_PER, dic_sectors = tuple(dic_inputs[field] for field in ["MarketCap", "TotalAssets", "TotalRevenue", "PER", "Sectors"])
+    
     # TODO: passer ces lignes ci dessous dans le fichier preprocessing.py
     df_TotalRevenue.ffill(inplace=True)
     df_TotalAssets.ffill(inplace=True)

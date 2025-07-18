@@ -3,14 +3,15 @@ import numpy as np
 
 from src.utils.utils_simple_strat import create_df_input
 
-def strat_sector_PER(df_PER, dic_ticker_sector_cleaned, num_stocks_available) :
+def strat_sector_PER(dic_inputs, num_stocks_available) :
+    df_PER, dic_sectors = tuple(dic_inputs[field] for field in ["PER", "Sectors"])
 
     df_PER_reindex = df_PER.copy()
 
-    df_PER_reindex = df_PER_reindex[[i for i in df_PER_reindex.columns if i in dic_ticker_sector_cleaned.keys()]]
+    df_PER_reindex = df_PER_reindex[[i for i in df_PER_reindex.columns if i in dic_sectors.keys()]]
 
     # Création d'une liste de tuples pour les secteurs associés aux tickers
-    sectors = [(dic_ticker_sector_cleaned[ticker], ticker) for ticker in df_PER_reindex.columns]
+    sectors = [(dic_sectors[ticker], ticker) for ticker in df_PER_reindex.columns]
 
     # On ajoute les secteurs aux colonnes du df
     df_PER_reindex.columns = pd.MultiIndex.from_tuples(sectors, names=['Sector', 'Ticker'])

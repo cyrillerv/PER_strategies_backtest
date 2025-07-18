@@ -3,7 +3,8 @@ import numpy as np
 
 from src.utils.utils_simple_strat import create_df_input
 
-def historical_PER_strat(df_PER, num_stocks_available) :
+def historical_PER_strat(dic_inputs, num_stocks_available) :
+    df_PER = dic_inputs["PER"]
 
     # Calcul du PER historique sur les deux dernières années
     historical_PER = df_PER.rolling(window=2*365).mean()
