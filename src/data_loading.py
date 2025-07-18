@@ -1,16 +1,24 @@
-import pandas as pd
 import json
-import numpy as np
+import pandas as pd
 
-def load_data() :
-    df_MarketCap = pd.read_excel(r"data\MarketCap.xlsx")
-    df_PER = pd.read_excel(r"data\PER.xlsx")
-    df_TotalAssets = pd.read_excel(r"data\TotalAssets.xlsx")
-    df_TotalRevenue = pd.read_excel(r"data\TotalRevenue.xlsx")
-    df_stockPrices = pd.read_excel(r"data\StockPrices.xlsx")
+def load_data(fields):
+    valid_fields = {"MarketCap", "PER", "TotalAssets", "TotalRevenue", "StockPrices", "Sectors"}
+    assert set(fields).issubset(valid_fields), "Un ou plusieurs champs invalides"
 
+    dic_df = {}
 
-    with open(r"data\CompanySectors.json", "r") as f:
-        dic_sectors = json.load(f)
+    # Si "Sectors" est demandé, on charge le JSON séparément
+    if "Sectors" in fields:
+        with open(r"data\CompanySectors.json", "r") as f:
+            dic_sectors = json.load(f)
+        dic_df["Sectors"] = dic_sectors
 
-    return df_MarketCap, df_PER, df_TotalAssets, df_TotalRevenue, df_stockPrices, dic_sectors
+    # On enlève "Sectors" car ce n'est pas un fichier Excel
+    fields = set(fields) - {"Sectors"}
+
+    # Chargement des fichiers Excel
+    for field in fields:
+        df_field = pd.read_excel(fr"data\{field}.xlsx")
+        dic_df[field] = df_field
+
+    return dic_df
