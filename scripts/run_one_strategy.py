@@ -6,13 +6,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.data_loading import load_data
 from src.preprocessing import clean_data
-from src.strategies.strategy_baseline import strat_fixed_treshold
+from src.strategies.strategy_fixed_threshold import strat_fixed_treshold
 from src.strategies.strategy_historical import historical_PER_strat
 from src.strategies.strategy_sector import strat_sector_PER
 from src.strategies.strategy_distance_matrix_clustering import strategy_distance_matrix_clustering
 from src.strategies.strategy_cluster import strat_cluster_K_means
 
-strat = strat_fixed_treshold
+strat = strategy_distance_matrix_clustering
 
 dic_strat_data = {
     strat_fixed_treshold : ["PER", "StockPrices"],

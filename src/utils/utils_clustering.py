@@ -157,6 +157,7 @@ def prepare_field_data(df: pd.DataFrame, field: str) -> pd.DataFrame:
     # 2. Renommer 'index' en 'date'
     melted.rename(columns={'index': 'date'}, inplace=True)
 
+    # TODO: mettre ça en preprocessing
     # 3. Si c'est le PER, on filtre les valeurs aberrantes
     if field.lower() == 'per':
         melted = melted[(melted[field] > 0) & (melted[field] < 80)].copy()

@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+# TODO: enlever les valeurs négatives du df PER
+
 def clean_data(dic_input) :
     valid_fields = {"MarketCap", "PER", "TotalAssets", "TotalRevenue", "StockPrices", "Sectors"}
     assert set(dic_input.keys()).issubset(valid_fields), "Un ou plusieurs champs invalides"

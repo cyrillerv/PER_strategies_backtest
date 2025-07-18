@@ -20,6 +20,7 @@ def strat_cluster_K_means(dic_inputs, num_stocks_available) :
     df_input.dropna(inplace=True)
 
     print("Cluster calc")
+    print(df_input)
     df_clustered = calculate_cluster(df_input)
     print(df_clustered)
 
