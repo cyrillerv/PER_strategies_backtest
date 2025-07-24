@@ -51,12 +51,15 @@ dic_launch_bt = {
 
 dic_results_bt = {}
 dic_strat_pnl = {}
+dic_strat_portfolio_returns = {}
 for nameStrat, df_strat in dic_launch_bt.items() :
     print(f"Starting {nameStrat} bt...")
     engine = BacktestEngine(df_strat.fillna(0), dic_results["StockPrices"])
     engine.run()
     dic_results_bt[nameStrat] = engine.summary()
     dic_strat_pnl[nameStrat] = engine.cumulative_pnl_portfolio
+    dic_strat_portfolio_returns[nameStrat] = engine.portfolio_returns
 
 compute_comparison_table(dic_results_bt)
 plot_pnl_graph(dic_strat_pnl)
+plot_density_returns_distrib(dic_strat_portfolio_returns)
