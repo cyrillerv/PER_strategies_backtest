@@ -10,14 +10,14 @@ from src.utils.utils_clustering import *
 # TODO: ne pas recalculer les cluster pour chaque date, mais plutôt le faire pour un intervalle plus long. Ex: trimestriellement.
 
 
-def strategy_distance_matrix_clustering(dic_inputs, num_stocks_available) :
+def strategy_distance_matrix_clustering(dic_inputs, num_stocks_available, rebalancing_dates) :
 
     df_MarketCap, df_TotalAssets, df_TotalRevenue, df_PER, dic_sectors = tuple(dic_inputs[field] for field in ["MarketCap", "TotalAssets", "TotalRevenue", "PER", "Sectors"])
 
     # On concatène toutes les df en un seul
     concat_data = pd.concat([df_MarketCap, df_TotalAssets, df_TotalRevenue], axis=1, keys=['MarketCap', 'TotalAssets', 'TotalRevenue'])
     concat_data.ffill(inplace=True)
-    rebalancing_dates = ["2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01", "2025-07-01"]
+    
     # Si on veut recalculer les clusters à chaque fois => on commente la ligne d'en dessous.
     concat_data = concat_data.loc[concat_data.index.isin([pd.to_datetime(date) for date in rebalancing_dates])]
 
