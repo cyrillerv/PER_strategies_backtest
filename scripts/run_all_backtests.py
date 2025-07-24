@@ -59,6 +59,7 @@ for nameStrat, df_strat in dic_launch_bt.items() :
     dic_results_bt[nameStrat] = engine.summary()
     dic_strat_pnl[nameStrat] = engine.cumulative_pnl_portfolio
     dic_strat_portfolio_returns[nameStrat] = engine.portfolio_returns
+    print("-----------------")
 
 compute_comparison_table(dic_results_bt)
 plot_pnl_graph(dic_strat_pnl)
