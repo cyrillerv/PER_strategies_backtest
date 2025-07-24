@@ -15,7 +15,7 @@ from src.strategies.strategy_historical import historical_PER_strat
 from src.strategies.strategy_sector import strat_sector_PER
 from src.strategies.strategy_distance_matrix_clustering import strategy_distance_matrix_clustering
 from src.strategies.strategy_cluster import strat_cluster_K_means
-
+from src.utils.compute_results import *
 
 # We load our parameters from our config.json file
 with open('config.json', 'r') as f:
@@ -41,8 +41,6 @@ order_table_clustering_strat = strat_cluster_K_means(dic_results, num_stocks_ava
 print("Launching distanceMatrix...")
 order_table_distance_matrix_strat = strategy_distance_matrix_clustering(dic_results, num_stocks_available, rebalancing_dates)
 
-
-
 dic_launch_bt = {
     "fixedThreshold": order_table_fixed_threshold_strat,
     "histoStrat": order_table_historical_strat,
@@ -52,26 +50,13 @@ dic_launch_bt = {
 }
 
 dic_results_bt = {}
-
+dic_strat_pnl = {}
 for nameStrat, df_strat in dic_launch_bt.items() :
     print(f"Starting {nameStrat} bt...")
     engine = BacktestEngine(df_strat.fillna(0), dic_results["StockPrices"])
     engine.run()
     dic_results_bt[nameStrat] = engine.summary()
+    dic_strat_pnl[nameStrat] = engine.cumulative_pnl_portfolio
 
-df_results_bt = pd.DataFrame.from_dict(
-    dic_results_bt,
-    orient='columns'
-)
-print(df_results_bt.round(4))
-
-df_results_bt.to_excel(r'results\compTableBT.xlsx')
-
-
-# Sauvegarde dans un fichier Excel avec un sheet par DataFrame
-with pd.ExcelWriter('results.xlsx') as writer:
-    order_table_fixed_threshold_strat.to_excel(writer, sheet_name='fixedThreshold', index=False)
-    order_table_historical_strat.to_excel(writer, sheet_name='Historical', index=False)
-    order_table_sector_strat.to_excel(writer, sheet_name='Sector', index=False)
-    order_table_distance_matrix_strat.to_excel(writer, sheet_name='distanceMatrix', index=False)
-    order_table_clustering_strat.to_excel(writer, sheet_name='clustering', index=False)
+compute_comparison_table(dic_results_bt)
+plot_pnl_graph(dic_strat_pnl)
