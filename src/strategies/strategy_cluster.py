@@ -13,17 +13,12 @@ def strat_cluster_K_means(dic_inputs, num_stocks_available) :
 
     df_input = pd.concat([melted_MarketCap, melted_TotalRevenue, melted_TotalAssets, melted_PER], axis=1).dropna()
     df_input.reset_index(inplace=True)
-    print("df_input created")
 
     label_sector = {i:k for k, i in enumerate(list(set(dic_sectors.values())))}
     df_input["Sector"] = df_input['Ticker'].map(dic_sectors).map(label_sector)
     df_input.dropna(inplace=True)
 
-    print("Cluster calc")
-    print(df_input)
     df_clustered = calculate_cluster(df_input)
-    print(df_clustered)
 
-    print("Interpreting signals")
     df_prise_position_clustering = interpret_signals(df_clustered, 0.2, num_stocks_available)
     return df_prise_position_clustering

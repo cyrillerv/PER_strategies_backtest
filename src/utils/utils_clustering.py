@@ -187,7 +187,6 @@ def calculate_cluster(df_input) :
     # Appliquer le clustering pour chaque date
     for date, group in tqdm(df_input.groupby('date')):
         X = group[['MarketCap', 'TotalRevenue', 'TotalAssets', 'Sector']].values  # Features utilisées pour le clustering
-        # print(X.shape[1])
         if X.shape[0] < 20 :
             continue
         
