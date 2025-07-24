@@ -6,9 +6,6 @@ from functools import partial
 
 from src.utils.utils_clustering import *
 
-# TODO: enlever le système d'excel car df trop grand
-# TODO: ne pas recalculer les cluster pour chaque date, mais plutôt le faire pour un intervalle plus long. Ex: trimestriellement.
-
 
 def strategy_distance_matrix_clustering(dic_inputs, num_stocks_available, rebalancing_dates) :
 
@@ -23,21 +20,17 @@ def strategy_distance_matrix_clustering(dic_inputs, num_stocks_available, rebala
 
     # On crée le df de penalty pour le field 'sector'
     df_sector = create_df_sector_penalty(dic_sectors)
-    recalculate_clusters = True
-    if recalculate_clusters :
-        # On crée une fontion partielle pour pouvoir donner deux arguments en input de notre fonction calc_cluster_distance_matrix
-        func = partial(calc_cluster_distance_matrix, df_sector=df_sector)
-        # Pour chaque date, on crée les clusters à partir de notre matrice de distance
-        y = concat_data.progress_apply(func, axis=1)
 
-        # On formatte le résultat pour avoir un df propre
-        df_all_cluster_distance_matrix = pd.concat(y.to_list())
-        df_all_cluster_distance_matrix.index.name = "date"
-        df_all_cluster_distance_matrix.reset_index(inplace=True)
-        # df_all_cluster_distance_matrix.to_excel(r"PER_STRATEGIES_BACKTEST\temp.xlsx")
-    else :
-        df_all_cluster_distance_matrix = pd.read_excel(r"PER_STRATEGIES_BACKTEST\temp.xlsx")
-        df_all_cluster_distance_matrix.drop(columns=["Unnamed: 0"], inplace=True)
+    # On crée une fontion partielle pour pouvoir donner deux arguments en input de notre fonction calc_cluster_distance_matrix
+    func = partial(calc_cluster_distance_matrix, df_sector=df_sector)
+    # Pour chaque date, on crée les clusters à partir de notre matrice de distance
+    y = concat_data.progress_apply(func, axis=1)
+
+    # On formatte le résultat pour avoir un df propre
+    df_all_cluster_distance_matrix = pd.concat(y.to_list())
+    df_all_cluster_distance_matrix.index.name = "date"
+    df_all_cluster_distance_matrix.reset_index(inplace=True)
+
 
 
     # On ajoute le PER au df
