@@ -25,6 +25,10 @@ fields = config["fields"]
 money_per_transaction = config["money_per_transaction"]
 
 print("Loading and prepararing data...")
+# We load the df with our benchmarks to compute factor exposure.
+df_bench = pd.read_excel(r"data\ETF_BENCH.xlsx")
+df_bench.set_index('Unnamed: 0', inplace=True)
+df_bench.index.name = None
 dic_results = load_data(fields)
 dic_results = clean_data(dic_results)
 # Nombre d'actions qu'on peut s'acheter à chaque date avec x$
@@ -54,7 +58,7 @@ dic_strat_pnl = {}
 dic_strat_portfolio_returns = {}
 for nameStrat, df_strat in dic_launch_bt.items() :
     print(f"Starting {nameStrat} bt...")
-    engine = BacktestEngine(df_strat.fillna(0), dic_results["StockPrices"])
+    engine = BacktestEngine(df_strat.fillna(0), dic_results["StockPrices"], df_bench)
     engine.run()
     dic_results_bt[nameStrat] = engine.summary()
     dic_strat_pnl[nameStrat] = engine.cumulative_pnl_portfolio
