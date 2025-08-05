@@ -4,22 +4,38 @@ import pandas as pd
 # TODO: enlever les valeurs négatives du df PER
 
 def clean_data(dic_input) :
-    valid_fields = {"MarketCap", "PER", "TotalAssets", "TotalRevenue", "StockPrices", "Sectors"}
-    assert set(dic_input.keys()).issubset(valid_fields), "Un ou plusieurs champs invalides"
-
     dic_output = {}
     for field in dic_input :
-        if field != "Sectors" :
+        if type(dic_input[field]) == dict :
+            dic_output[field] = dic_input[field]
+            continue
+        else : 
             df = dic_input[field].copy()
             df.set_index("Unnamed: 0", inplace=True)
             df.index.name = None
             df.replace([np.inf, -np.inf], np.nan, inplace=True)
             df.dropna(axis=1, how='all', inplace=True)
             df.index = pd.to_datetime(df.index)
+            df.sort_index(inplace=True)
             df_reindexed = df.reindex(pd.date_range(df.index.min(), df.index.max()), method='ffill')
-            dic_output[field] = df_reindexed
-        else :
-            dic_output[field] = dic_input[field]
+            df_reindexed.ffill(inplace=True)   
+        if field == "Factors":
+            dic_factor_name = {
+                'SPY': 'S&P 500',
+                'IWM': 'Russell 2000',
+                'VTV': 'Value',
+                'VUG': 'Growth',
+                'MTUM': 'Momentum',
+                'USMV': 'Minimum Volatility',
+                'QUAL': 'Quality',
+                'VYM': 'High Dividend Yield',
+                'SPHQ': 'S&P 500 Quality',
+                'VLUE': 'Value',
+                'PDP': 'Momentum'
+            }        
+            df_reindexed.columns = df_reindexed.columns.map(lambda col: dic_factor_name.get(col, col))
+
+        dic_output[field] = df_reindexed 
 
     return dic_output
 

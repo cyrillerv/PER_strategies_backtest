@@ -3,8 +3,9 @@ import numpy as np
 
 from src.utils.utils_simple_strat import create_df_input
 
-def strat_sector_PER(dic_inputs, num_stocks_available) :
-    df_PER, dic_sectors = tuple(dic_inputs[field] for field in ["PER", "Sectors"])
+def strat_sector_PER(dic_main, dic_variables, num_stocks_available) :
+    df_PER = dic_main["PER"].copy()
+    dic_sectors = dic_variables["Sectors"]
 
     df_PER_reindex = df_PER.copy()
 
@@ -18,8 +19,6 @@ def strat_sector_PER(dic_inputs, num_stocks_available) :
 
     # On calcule la moyenne des PER par secteur
     df_PER_per_sector = df_PER_reindex.groupby(level='Sector', axis=1).mean()
-    df_PER_per_sector
-
 
     # On reindex pour que les deux df aient les même colonnes
     df_PER_per_sector_reindex = df_PER_per_sector.reindex(df_PER_reindex.columns.get_level_values(0), axis=1)

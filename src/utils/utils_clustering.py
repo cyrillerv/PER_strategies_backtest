@@ -25,10 +25,11 @@ def calc_cluster_distance_matrix(row, df_sector) :
     En gros, on ajoute des pénalités: si pas le même secteur alors +1 de pénalités, si marketcap trop éloignée, plus 1 de pénalité, si c'est la même, 0 de pénalité
     On a fixé arbitrairement à 50 le nombre minimal de tickers (avec toutes les données) qu'il faut à une date donnée pour qu'on calcule les clusters.
     """
+    nb_fields_total = len(set(row.index.get_level_values(0)))
     row = row.dropna()
     # On regarde si on a une valeur pour chaque field
     nb_fields_per_ticker = row.index.get_level_values(1).value_counts()
-    tickers_to_keep = list(nb_fields_per_ticker.loc[nb_fields_per_ticker == 3].index)
+    tickers_to_keep = list(nb_fields_per_ticker.loc[nb_fields_per_ticker == nb_fields_total].index) # TODO: faire ajustemnt dynamique : on supprime les fields pour lesquels 80% des tickers n'ont pas de valeur, puis on enlève les tickers pour lesquels il manque des valeurs
     if row.empty or len(tickers_to_keep) < 50 :
         return pd.DataFrame()
     
@@ -163,7 +164,7 @@ def prepare_field_data(df: pd.DataFrame, field: str) -> pd.DataFrame:
         melted = melted[(melted[field] > 0) & (melted[field] < 80)].copy()
 
     # 4. Supprimer les doublons
-    melted.drop_duplicates(['Ticker', field], keep='first', inplace=True)
+    # melted.drop_duplicates(['Ticker', field], keep='first', inplace=True)
 
     # 5. Mettre l'index sur (date, Ticker)
     melted.set_index(['date', 'Ticker'], inplace=True)
@@ -186,7 +187,7 @@ def calculate_cluster(df_input) :
 
     # Appliquer le clustering pour chaque date
     for date, group in tqdm(df_input.groupby('date')):
-        X = group[['MarketCap', 'TotalRevenue', 'TotalAssets', 'Sector']].values  # Features utilisées pour le clustering
+        X = group[[i for i in group.columns if i not in ["PER", "date", "Ticker"]]].values  # Features utilisées pour le clustering
         if X.shape[0] < 20 :
             continue
         

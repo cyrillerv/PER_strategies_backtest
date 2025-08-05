@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 from src.utils.utils_simple_strat import create_df_input
 
-def strat_fixed_treshold(dic_inputs, num_stocks_available) :
-    df_PER = dic_inputs["PER"]
+def strat_fixed_treshold(dic_main, num_stocks_available) :
+    df_PER = dic_main["PER"]
     # Conditions
     conditions = [
         (df_PER > 25) & ((df_PER.shift(1) <= 25) | (df_PER.shift(1).isna())),  # Short

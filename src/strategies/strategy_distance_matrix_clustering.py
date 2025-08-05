@@ -7,12 +7,18 @@ from functools import partial
 from src.utils.utils_clustering import *
 
 
-def strategy_distance_matrix_clustering(dic_inputs, num_stocks_available, rebalancing_dates) :
-
-    df_MarketCap, df_TotalAssets, df_TotalRevenue, df_PER, dic_sectors = tuple(dic_inputs[field] for field in ["MarketCap", "TotalAssets", "TotalRevenue", "PER", "Sectors"])
-
-    # On concatène toutes les df en un seul
-    concat_data = pd.concat([df_MarketCap, df_TotalAssets, df_TotalRevenue], axis=1, keys=['MarketCap', 'TotalAssets', 'TotalRevenue'])
+def strategy_distance_matrix_clustering(dic_main, dic_variables, num_stocks_available, rebalancing_dates) :
+    list_name_df = []
+    list_df = []
+    for field in dic_variables :
+        if "sector" in field.lower() and type(dic_variables[field]) == dict :
+            dic_sectors = dic_variables[field]
+            continue
+        list_df.append(dic_variables[field])
+        list_name_df.append(field)
+    df_PER = dic_main["PER"].copy()
+    
+    concat_data = pd.concat(list_df, axis=1, keys=list_name_df)
     concat_data.ffill(inplace=True)
     
     # Si on veut recalculer les clusters à chaque fois => on commente la ligne d'en dessous.

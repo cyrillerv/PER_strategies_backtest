@@ -1,10 +1,12 @@
 import sys
 import os
 import json
+from backtesting.core import BacktestEngine # Librairy I created available on GitHub
+
 # Ajoute le dossier racine du projet au PYTHONPATH
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.data_loading import load_data
+from src.data_loading import *
 from src.preprocessing import clean_data
 from src.strategies.strategy_fixed_threshold import strat_fixed_treshold
 from src.strategies.strategy_historical import historical_PER_strat
@@ -18,30 +20,37 @@ with open('config.json', 'r') as f:
 rebalancing_dates = config["rebalancing_dates"]
 money_per_transaction = config["money_per_transaction"]
 
-strat = strategy_distance_matrix_clustering
+strat = strat_sector_PER
 
 dic_strat_data = {
-    strat_fixed_treshold : ["PER", "StockPrices"],
-    historical_PER_strat : ["PER", "StockPrices"],
-    strat_sector_PER : ["PER", "StockPrices"],
-    strat_cluster_K_means : ['MarketCap', "TotalAssets", "TotalRevenue", "PER", "Sectors", "StockPrices"],
-    strategy_distance_matrix_clustering : ['MarketCap', "TotalAssets", "TotalRevenue", "PER", "Sectors", "StockPrices"]    
+    strat_fixed_treshold : ["Sectors"], # Sector field is useful to give insights when backtesting even thpugh we won't use it in this strat
+    historical_PER_strat : ["Sectors"], # Sector field is useful to give insights when backtesting even thpugh we won't use it in this strat
+    strat_sector_PER : ["Sectors"], # Sector field is useful to give insights when backtesting even thpugh we won't use it in this strat
+    strat_cluster_K_means : ["all"],
+    strategy_distance_matrix_clustering : ["all"]  
 }
 
 fields = list(dic_strat_data[strat])
-dic_results = load_data(fields)
-dic_results = clean_data(dic_results)
-num_stocks_available = money_per_transaction // dic_results['StockPrices']
+dic_variables = load_variables(fields)
+dic_variables = clean_data(dic_variables)
+dic_main = load_main_data()
+dic_main = clean_data(dic_main)
+
+num_stocks_available = money_per_transaction // dic_main['StockPrices']
 
 dic_args = {
-    strat_fixed_treshold : (dic_results, num_stocks_available),
-    historical_PER_strat : (dic_results, num_stocks_available),
-    strat_sector_PER : (dic_results, num_stocks_available),
-    strat_cluster_K_means : (dic_results, num_stocks_available),
-    strategy_distance_matrix_clustering : (dic_results, num_stocks_available)
+    strat_fixed_treshold : (dic_main, num_stocks_available),
+    historical_PER_strat : (dic_main, num_stocks_available),
+    strat_sector_PER : (dic_main, dic_variables, num_stocks_available),
+    strat_cluster_K_means : (dic_main, dic_variables, num_stocks_available),
+    strategy_distance_matrix_clustering : (dic_main, dic_variables, num_stocks_available, rebalancing_dates)
 }
 
 args = dic_args[strat]
 result = strat(*args)
+print(result)
+engine = BacktestEngine(result.fillna(0), dic_main["StockPrices"], bench_df_input=dic_main["Factors"], sector_mapping=dic_variables["Sectors"], close_all=True)
+engine.run()
+print(engine.summary())
 
 
