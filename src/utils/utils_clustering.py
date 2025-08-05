@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 import scipy.cluster.hierarchy as sch
 from scipy.cluster.hierarchy import fcluster
+from k_means_constrained import KMeansConstrained
+from sklearn.preprocessing import StandardScaler
+from tqdm import tqdm
+
 
 def create_df_sector_penalty(dic_sectors) :
     # Créer une série à partir du dictionnaire des secteurs
@@ -25,17 +29,24 @@ def calc_cluster_distance_matrix(row, df_sector) :
     En gros, on ajoute des pénalités: si pas le même secteur alors +1 de pénalités, si marketcap trop éloignée, plus 1 de pénalité, si c'est la même, 0 de pénalité
     On a fixé arbitrairement à 50 le nombre minimal de tickers (avec toutes les données) qu'il faut à une date donnée pour qu'on calcule les clusters.
     """
+    # Pour chaque field, on regarde le pourcentage de NaN
+    perc_nan_per_field = row.notna().groupby(level=0).sum() / row.groupby(level=0).size()
+    # On ne garde que les fields pour lesquels au moins 80% des tickers ont une valeur
+    fields_to_drop = perc_nan_per_field[perc_nan_per_field <= 0.8].index
+    row.drop(fields_to_drop, level=0, inplace=True)
+    row.dropna(inplace=True)
+
+    # On regarde le nombre de fields restants
     nb_fields_total = len(set(row.index.get_level_values(0)))
-    row = row.dropna()
-    # On regarde si on a une valeur pour chaque field
+    # On regarde si les tickers ont une data pour chaque field
     nb_fields_per_ticker = row.index.get_level_values(1).value_counts()
-    tickers_to_keep = list(nb_fields_per_ticker.loc[nb_fields_per_ticker == nb_fields_total].index) # TODO: faire ajustemnt dynamique : on supprime les fields pour lesquels 80% des tickers n'ont pas de valeur, puis on enlève les tickers pour lesquels il manque des valeurs
+    tickers_to_keep = list(nb_fields_per_ticker.loc[nb_fields_per_ticker == nb_fields_total].index)
+    # On s'assure qu'on a au moins 50 tickers avec des données complètes pour cette date
     if row.empty or len(tickers_to_keep) < 50 :
         return pd.DataFrame()
     
     # On filtre pour ne garder que les tickers qui ont des données pour toutes les dates.
     row = row.loc[row.index.get_level_values(1).isin(tickers_to_keep)]
-    
     
     distance_matrix = df_sector.copy()
     for field in list(set(row.index.get_level_values(0))) :
@@ -72,40 +83,6 @@ def calc_cluster_distance_matrix(row, df_sector) :
     return df_clusters
 
 
-def interpret_signals1(df_all_cluster_distance_matrix, nb_min_ticker_per_cluster, tolerance_around_mean, num_stocks_available):
-    # Last function
-    # On enlève les cluster pour lesquels il n'y a qu'un seul ticker à cette date là
-    
-
-    dic_test = df_all_cluster_distance_matrix.groupby(["date", "Cluster"])["PER"].mean().to_frame().unstack(level=0).T.droplevel(0).to_dict()
-    df_all_cluster_distance_matrix["Cluster_mean"] = df_all_cluster_distance_matrix.apply(lambda row: dic_test[row["Cluster"]][row['date']], axis=1)
-    df_all_cluster_distance_matrix
-
-    
-    df_all_cluster_distance_matrix["Position"] = np.where(df_all_cluster_distance_matrix["PER"] < ((1-tolerance_around_mean)*df_all_cluster_distance_matrix["Cluster_mean"]), 1,
-            np.where(
-                df_all_cluster_distance_matrix["PER"] > ((1+tolerance_around_mean)*df_all_cluster_distance_matrix["Cluster_mean"]), -1, 0
-            ))
-    df_all_cluster_distance_matrix
-
-    df_positions = df_all_cluster_distance_matrix.pivot_table("Position", "date", "Ticker")
-    # On rajoute une ligne vide pour que lorsqu'on fasse le .diff() pour détecter les prise de positon, les positions prises le premier jour soient quand même détectée
-    df_positions = pd.concat([df_positions, pd.DataFrame(index=[df_positions.index.min() - pd.Timedelta(days=1)])])
-    df_positions.sort_index(inplace=True)
-
-    df_prise_positions = df_positions.ffill().fillna(0).diff().replace(0, np.nan)
-    df_prise_positions_distance_matrix = df_prise_positions.reset_index().melt(id_vars=['index'], var_name='Ticker', value_name='Value').dropna().copy()
-
-    num_stocks_available_clustering = num_stocks_available.reindex(list(set(df_prise_positions_distance_matrix["index"])), method='ffill')
-    df_prise_positions_distance_matrix["Volume"] = df_prise_positions_distance_matrix.apply(
-        lambda row: num_stocks_available_clustering.loc[row['index'], row['Ticker']] if row['Ticker'] in num_stocks_available.columns else np.nan,
-        axis=1)
-    df_prise_positions_distance_matrix["Type"] = np.where(df_prise_positions_distance_matrix["Value"] == 1, "Buy", "Sell")
-    df_prise_positions_distance_matrix.rename(columns={"index":"Date", "Ticker":"Symbol"}, inplace=True)
-    df_prise_positions_distance_matrix.drop(columns=["Value"], inplace=True)
-    return df_prise_positions_distance_matrix
-
-
 def interpret_signals(df_clustered_date_filtered, tolerance_around_mean, num_stocks_available):
     dic_test = df_clustered_date_filtered.groupby(["date", "Cluster"])["PER"].mean().to_frame().unstack(level=0).T.droplevel(0).to_dict()
     df_clustered_date_filtered["Cluster_mean"] = df_clustered_date_filtered.apply(lambda row: dic_test[row["Cluster"]][row['date']], axis=1)
@@ -134,8 +111,6 @@ def interpret_signals(df_clustered_date_filtered, tolerance_around_mean, num_sto
     df_prise_positions_melted.rename(columns={"index":"Date", "Ticker":"Symbol"}, inplace=True)
     df_prise_positions_melted.drop(columns=["Value"], inplace=True)
     return df_prise_positions_melted
-
-
 
 
 
@@ -172,11 +147,6 @@ def prepare_field_data(df: pd.DataFrame, field: str) -> pd.DataFrame:
     return melted
 
 
-import pandas as pd
-import numpy as np
-from k_means_constrained import KMeansConstrained
-from sklearn.preprocessing import StandardScaler
-from tqdm import tqdm
 
 def calculate_cluster(df_input) :
     # Convertir la colonne Date en format datetime
