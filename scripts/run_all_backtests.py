@@ -12,8 +12,7 @@ from src.preprocessing import clean_data
 from src.strategies.strategy_fixed_threshold import strat_fixed_treshold
 from src.strategies.strategy_historical import historical_PER_strat
 from src.strategies.strategy_sector import strat_sector_PER
-from src.strategies.strategy_distance_matrix_clustering import strategy_distance_matrix_clustering
-from src.strategies.strategy_cluster import strat_cluster_K_means
+from src.strategies.clustering import strategy_distance_matrix_clustering, strat_cluster_K_means
 from src.utils.compute_results import *
 
 # We load our parameters from our config.json file
@@ -36,7 +35,7 @@ order_table_historical_strat = historical_PER_strat(dic_main, num_stocks_availab
 print("Launching sectorStrat...")
 order_table_sector_strat = strat_sector_PER(dic_main, dic_variables, num_stocks_available)
 print("Launching clustering...")
-order_table_clustering_strat = strat_cluster_K_means(dic_main, dic_variables, num_stocks_available)
+order_table_clustering_strat = strat_cluster_K_means(dic_main, dic_variables, num_stocks_available, rebalancing_dates)
 print("Launching distanceMatrix...")
 order_table_distance_matrix_strat = strategy_distance_matrix_clustering(dic_main, dic_variables, num_stocks_available, rebalancing_dates)
 

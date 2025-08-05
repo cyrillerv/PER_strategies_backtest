@@ -11,8 +11,7 @@ from src.preprocessing import clean_data
 from src.strategies.strategy_fixed_threshold import strat_fixed_treshold
 from src.strategies.strategy_historical import historical_PER_strat
 from src.strategies.strategy_sector import strat_sector_PER
-from src.strategies.strategy_distance_matrix_clustering import strategy_distance_matrix_clustering
-from src.strategies.strategy_cluster import strat_cluster_K_means
+from src.strategies.clustering import strategy_distance_matrix_clustering, strat_cluster_K_means
 
 # We load our parameters from our config.json file
 with open('config.json', 'r') as f:
@@ -20,7 +19,7 @@ with open('config.json', 'r') as f:
 rebalancing_dates = config["rebalancing_dates"]
 money_per_transaction = config["money_per_transaction"]
 
-strat = strat_sector_PER
+strat = strategy_distance_matrix_clustering
 
 dic_strat_data = {
     strat_fixed_treshold : ["Sectors"], # Sector field is useful to give insights when backtesting even thpugh we won't use it in this strat
@@ -42,7 +41,7 @@ dic_args = {
     strat_fixed_treshold : (dic_main, num_stocks_available),
     historical_PER_strat : (dic_main, num_stocks_available),
     strat_sector_PER : (dic_main, dic_variables, num_stocks_available),
-    strat_cluster_K_means : (dic_main, dic_variables, num_stocks_available),
+    strat_cluster_K_means : (dic_main, dic_variables, num_stocks_available, rebalancing_dates),
     strategy_distance_matrix_clustering : (dic_main, dic_variables, num_stocks_available, rebalancing_dates)
 }
 

@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 
 # TODO: enlever les valeurs négatives du df PER
+#     # TODO: mettre ça en preprocessing
+#     # 3. Si c'est le PER, on filtre les valeurs aberrantes
+#     if field.lower() == 'per':
+#         melted = melted[(melted[field] > 0) & (melted[field] < 80)].copy()
 
 def clean_data(dic_input) :
     dic_output = {}
