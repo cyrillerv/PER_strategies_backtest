@@ -34,10 +34,14 @@ def clean_data(dic_input) :
                 'QUAL': 'Quality',
                 'VYM': 'High Dividend Yield',
                 'SPHQ': 'S&P 500 Quality',
-                'VLUE': 'Value',
-                'PDP': 'Momentum'
+                'VLUE': 'VLUE',
+                'PDP': 'PDP'
             }        
             df_reindexed.columns = df_reindexed.columns.map(lambda col: dic_factor_name.get(col, col))
+            if 'VLUE' in df_reindexed.columns : 
+                df_reindexed.drop(columns=['VLUE'], inplace=True)
+            if 'PDP' in df_reindexed.columns : 
+                df_reindexed.drop(columns=['PDP'], inplace=True)
 
         dic_output[field] = df_reindexed 
 
